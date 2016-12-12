@@ -1,1 +1,1 @@
-# C-Invariant
+# C++ Invariant lib for primitive types
