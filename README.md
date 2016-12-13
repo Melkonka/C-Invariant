@@ -13,9 +13,11 @@ MSVC: The latest msvc doesn't support fold expressions, so it won't work with it
 This lib is aim to provide a zero overhead way to write self documenting code by expressing invariants with types.
 
 For example, instead of this:
+
  void f (int i) {assert (i >= 0 && i <= 255);}
  
 Write this:
+
  void f (bounded_i<0, 255> i) {}
  
 The latter ensure our invariant through type information, thus it can be used to eliminate redundant checks.
