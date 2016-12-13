@@ -4,7 +4,6 @@
 #include <type_traits>
 #include <limits>
 
-//TODO: Somehow eliminate upper/lower bound stuff, these just makes things more complicated
 
 namespace inv {
 
@@ -19,6 +18,7 @@ namespace inv {
   class bound_invariant 
   {
     static_assert (!std::is_floating_point_v<T>, "Floating point is not supported yet, come back in a few month!");
+    static_assert (LowerBound < UpperBound || LowerBound == inf<T>, "Lower bound must be smaller than upper bound!");
   public:
     static constexpr T lower_bound = LowerBound;
     static constexpr T upper_bound = UpperBound;
@@ -28,20 +28,23 @@ namespace inv {
                                                              lower_bounded_tag, 
                                                              upper_bounded_tag>>;
 
-    std::enable_if<std::is_same_v<bounded_tag, bound_type>, bool>
-    check (T value)
+    static bool check (T value) 
+    {
+      return check_impl (value, bound_type{});
+    }
+
+  private:
+    static bool check_impl (T value, bounded_tag)
     {
       return value >= lower_bound && value <= upper_bound;
     }
 
-    std::enable_if<std::is_same_v<upper_bounded_tag, bound_type>, bool>
-    check (T value)
+    static bool check_impl (T value, upper_bounded_tag)
     {
       return value <= upper_bound;
     }
 
-    std::enable_if<std::is_same_v<lower_bounded_tag, bound_type>, bool>
-    check (T value)
+    static bool check_impl (T value, lower_bounded_tag)
     {
       return value >= lower_bound;
     }

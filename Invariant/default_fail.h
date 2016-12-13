@@ -4,9 +4,6 @@
 #include <exception>
 #include <stdexcept>
 
-//TODO: gsl like configurable, macro based failing
-
-
 namespace inv {
 
   struct inv_fail : public std::runtime_error
@@ -14,16 +11,15 @@ namespace inv {
     explicit inv_fail (const char* message) : std::runtime_error (message) {}
   };
 
-  template<typename... Invariants>
   class default_fail 
   {
   public:
 
-    template<typename T>
-    void check (T value)
+    static constexpr bool enabled = true;
+
+    static void assert ()
     {
-      if ((Invariants::check (value) && ...))
-        throw inv_fail ("Invariant check failed");
+      throw inv_fail ("Invariant check failed");
     }
   };
 };

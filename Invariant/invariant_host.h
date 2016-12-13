@@ -5,18 +5,14 @@
 #include <tuple>
 
 namespace inv {
-//TODO LIST:
-//- create operator+(invariant) and check if we surely keep the invariant without recheck
-//Do this with every operator
-//- Write a lightweight typelist to make optimizations easier
-//- instead of using type to optimize away checks, call a metafunction if the other's invariants are more strict (e.g bounded<0, 1> is garantueed to be bounded<0, 255>);
-//- bitwise operators
 
-//FailPolicy must define a static function check (PrimitiveType).
-//Invariants is a Template parameter pack (Invariants), which also has to define a static function check (PrimitiveType). //TODO: better naming
+//FailPolicy must define:
+//1.: a static function assert() - that's we fail, it can call an assert, terminate, throw an exception, debugbreak etc.
+//2.: constexpr static bool enabled. If it's false, the invariants checks doesn't happen. (for example, in release builds the checks may not be desired)
+// 
+//Invariants is a Template parameter pack, which has to define a static function check (PrimitiveType).
 //An Invariant's responsibility is to check the invariant, while FailPolicy handle the errors.
-//If FailPolicy doesn't have a check function it's basically equivalent to simple primitive types without any check. (e.g.: release build)
-template<typename PrimitiveType, template<typename...> class FailPolicy, typename... Invariants>
+template<typename PrimitiveType, typename FailPolicy, typename... Invariants>
 class invariant_host
 {
   static_assert (!std::is_same_v<PrimitiveType, bool> &&
@@ -24,7 +20,6 @@ class invariant_host
                  "Template parameter 1 must be a non-bool primitive type");
   static_assert (sizeof...(Invariants) == 1, "Multiple invariants are not supported yet");
 public:
-  using checker = FailPolicy<Invariants...>;
   using type = invariant_host<PrimitiveType, FailPolicy, Invariants...>;
 
   //Info: Currently only 1 invariant is supported for simplicity, this is a temporary solution
@@ -43,7 +38,7 @@ public:
   type& operator= (const T& other) 
   {
     value = other;
-    checker::check (value);
+    check (value);
   } 
 
    operator PrimitiveType () const {return value;}
@@ -51,14 +46,14 @@ public:
    type& operator++() 
    {
      ++value;
-     checker::check (value);
+     check (value);
      return this;
    }
 
    type& operator--()
    {
      --value;
-     checker::check (value);
+     check (value);
      return *this;
    }
 
@@ -84,7 +79,7 @@ public:
    type& operator+= (PrimitiveType other)
    {
      value += other;
-     checker::check (value);
+     check (value);
      return *this;
    }
 
@@ -96,7 +91,7 @@ public:
    type& operator-= (PrimitiveType other)
    {
      value -= other;
-     checker::check (value);
+     check (value);
      return *this;
    }
 
@@ -108,7 +103,7 @@ public:
    type& operator*= (PrimitiveType other)
    {
      value *= other;
-     checker::check (value);
+     check (value);
      return *this;
    }
 
@@ -120,27 +115,38 @@ public:
    type& operator/= (PrimitiveType other)
    {
      value /= other;
-     checker::check (value);
+     check (value);
      return *this;
    }
 
-   friend bool operator< (type lhs, PrimitiveType rhs) { return lhs.value < rhs; }
-   friend bool operator> (type lhs, PrimitiveType rhs) { return rhs < lhs; }
-   friend bool operator<=(type lhs, PrimitiveType rhs) { return !(lhs > rhs); }
-   friend bool operator>=(type lhs, PrimitiveType rhs) { return !(lhs < rhs); }
-   friend bool operator==(type lhs, PrimitiveType rhs) { return lhs.value == rhs; }
-   friend bool operator!=(type lhs, PrimitiveType rhs) { return !(lhs == rhs); }
+   friend bool operator< (type lhs, PrimitiveType rhs) noexcept { return lhs.value < rhs; }
+   friend bool operator> (type lhs, PrimitiveType rhs) noexcept { return rhs < lhs; }
+   friend bool operator<=(type lhs, PrimitiveType rhs) noexcept { return !(lhs > rhs); }
+   friend bool operator>=(type lhs, PrimitiveType rhs) noexcept { return !(lhs < rhs); }
+   friend bool operator==(type lhs, PrimitiveType rhs) noexcept { return lhs.value == rhs; }
+   friend bool operator!=(type lhs, PrimitiveType rhs) noexcept { return !(lhs == rhs); }
 
-   friend bool operator< (PrimitiveType lhs, type rhs) { return lhs < rhs.value; }
-   friend bool operator> (PrimitiveType lhs, type rhs) { return rhs < lhs; }
-   friend bool operator<=(PrimitiveType lhs, type rhs) { return !(lhs > rhs); }
-   friend bool operator>=(PrimitiveType lhs, type rhs) { return !(lhs < rhs); }
-   friend bool operator==(PrimitiveType lhs, type rhs) { return lhs == rhs.value; }
-   friend bool operator!=(PrimitiveType lhs, type rhs) { return !(lhs == rhs); }
+   friend bool operator< (PrimitiveType lhs, type rhs) noexcept { return lhs < rhs.value; }
+   friend bool operator> (PrimitiveType lhs, type rhs) noexcept { return rhs < lhs; }
+   friend bool operator<=(PrimitiveType lhs, type rhs) noexcept { return !(lhs > rhs); }
+   friend bool operator>=(PrimitiveType lhs, type rhs) noexcept { return !(lhs < rhs); }
+   friend bool operator==(PrimitiveType lhs, type rhs) noexcept { return lhs == rhs.value; }
+   friend bool operator!=(PrimitiveType lhs, type rhs) noexcept { return !(lhs == rhs); }
 
-   PrimitiveType get () const {return value;}
+   PrimitiveType get () const noexcept { return value; }
+
 private:
   PrimitiveType value;
+
+  std::enable_if_t<FailPolicy::enabled>
+  check () const
+  {
+    if (!(Invariants::check(value) && ...))
+      FailPolicy::assert ();
+  }
+
+  std::enable_if_t<!FailPolicy::enabled>
+  check () const noexcept {}
 };
 
 
