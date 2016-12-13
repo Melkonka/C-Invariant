@@ -10,7 +10,7 @@ GCC 6+
 
 MSVC: The latest msvc doesn't support fold expressions, so it won't work with it.
 
-This lib is aim to provide a zero overhead way to write self documenting code by expressing invariants with types.
+This lib is aim to provide a zero overhead cross-platform way to write self documenting code by expressing invariants with types. It's also aimed to optimize away redundant checks.
 
 For example, instead of this:
 
