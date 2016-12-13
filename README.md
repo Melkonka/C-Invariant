@@ -22,3 +22,11 @@ Write this:
  
 The latter ensure our invariant through type information, thus it can be used to eliminate redundant checks.
 It's also way better to see the precondition in a declaration than in the definition.
+
+Most things are customizable:
+
+The way to fail is defined by a FailPolicy class, which should only provide a static assert function.
+
+The invariants are policies with check(T) functions, a type will be able to handle multiple invariants.
+
+It's only working with primitive types, because i don't know any way to ensure the invariant on user defined types.
