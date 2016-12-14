@@ -8,7 +8,7 @@ namespace inv {
 
 //FailPolicy must define:
 //1.: a static function assert() - that's we fail, it can call an assert, terminate, throw an exception, debugbreak etc.
-//2.: constexpr static bool enabled. If it's false, the invariants checks doesn't happen. (for example, in release builds the checks may not be desired)
+//2.: using enabled = std::true_type/false_type. If it's false, the invariants checks doesn't happen. (for example, in release builds the checks may not be desired)
 // 
 //Invariants is a Template parameter pack, which has to define a static function check (PrimitiveType).
 //An Invariant's responsibility is to check the invariant, while FailPolicy handle the errors.
@@ -29,16 +29,16 @@ public:
 
   static constexpr int invariant_size = sizeof...(Invariants);
 
-  invariant_host (PrimitiveType value) : value (value) {checker::check (value);}
+  invariant_host (PrimitiveType value) : value (value) {check ();}
 
   invariant_host (const type& other) = default;
   type& operator= (const type& other) = default;
 
-  template<typename T>
-  type& operator= (const T& other) 
+  type& operator= (PrimitiveType other) 
   {
     value = other;
-    check (value);
+    check ();
+    return *this;
   } 
 
    operator PrimitiveType () const {return value;}
@@ -46,14 +46,14 @@ public:
    type& operator++() 
    {
      ++value;
-     check (value);
-     return this;
+     check ();
+     return *this;
    }
 
    type& operator--()
    {
      --value;
-     check (value);
+     check ();
      return *this;
    }
 
@@ -66,87 +66,57 @@ public:
 
    type operator--(int)
    {
-     PrimitiveType tmp = value;
+     type tmp (*this);
      operator-- ();
      return tmp;
    }
 
-   type operator+ (PrimitiveType other)
-   {
-     return type (value + other);
-   }
-
-   type& operator+= (PrimitiveType other)
+   template<typename T>
+   type& operator+= (T other)
    {
      value += other;
-     check (value);
+     check ();
      return *this;
    }
 
-   type operator- (PrimitiveType other)
-   {
-     return type (value - other);
-   }
-
-   type& operator-= (PrimitiveType other)
+   template<typename T>
+   type& operator-= (T other)
    {
      value -= other;
-     check (value);
+     check ();
      return *this;
    }
 
-   type operator* (PrimitiveType other)
-   {
-     return type(value * other);
-   }
-
-   type& operator*= (PrimitiveType other)
+   template<typename T>
+   type& operator*= (T other)
    {
      value *= other;
-     check (value);
+     check ();
      return *this;
    }
 
-   type operator/ (PrimitiveType other)
-   {
-     return type (value / other);
-   }
-
-   type& operator/= (PrimitiveType other)
+   template<typename T>
+   type& operator/= (T other)
    {
      value /= other;
-     check (value);
+     check ();
      return *this;
    }
-
-   friend bool operator< (type lhs, PrimitiveType rhs) noexcept { return lhs.value < rhs; }
-   friend bool operator> (type lhs, PrimitiveType rhs) noexcept { return rhs < lhs; }
-   friend bool operator<=(type lhs, PrimitiveType rhs) noexcept { return !(lhs > rhs); }
-   friend bool operator>=(type lhs, PrimitiveType rhs) noexcept { return !(lhs < rhs); }
-   friend bool operator==(type lhs, PrimitiveType rhs) noexcept { return lhs.value == rhs; }
-   friend bool operator!=(type lhs, PrimitiveType rhs) noexcept { return !(lhs == rhs); }
-
-   friend bool operator< (PrimitiveType lhs, type rhs) noexcept { return lhs < rhs.value; }
-   friend bool operator> (PrimitiveType lhs, type rhs) noexcept { return rhs < lhs; }
-   friend bool operator<=(PrimitiveType lhs, type rhs) noexcept { return !(lhs > rhs); }
-   friend bool operator>=(PrimitiveType lhs, type rhs) noexcept { return !(lhs < rhs); }
-   friend bool operator==(PrimitiveType lhs, type rhs) noexcept { return lhs == rhs.value; }
-   friend bool operator!=(PrimitiveType lhs, type rhs) noexcept { return !(lhs == rhs); }
 
    PrimitiveType get () const noexcept { return value; }
 
 private:
   PrimitiveType value;
 
-  std::enable_if_t<FailPolicy::enabled>
-  check () const
+  void check () { check_impl (typename FailPolicy::enabled ()); }
+
+  void check_impl (std::true_type) const
   {
-    if (!(Invariants::check(value) && ...))
-      FailPolicy::assert ();
+    if (!(Invariants::check (value) && ...))
+      FailPolicy::trigger_assert ();
   }
 
-  std::enable_if_t<!FailPolicy::enabled>
-  check () const noexcept {}
+  void check_impl (std::false_type) const noexcept {}
 };
 
 

@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <stdexcept>
+#include <type_traits>
 
 namespace inv {
 
@@ -15,9 +16,9 @@ namespace inv {
   {
   public:
 
-    static constexpr bool enabled = true;
+    using enabled = std::true_type;
 
-    static void assert ()
+    static void trigger_assert ()
     {
       throw inv_fail ("Invariant check failed");
     }
