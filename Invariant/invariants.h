@@ -14,12 +14,14 @@ namespace inv {
   using positive_i = invariant_host<int,   default_fail, bound_invariant<int,   0, inf<int>>>;
   using positive_l = invariant_host<long,  default_fail, bound_invariant<long,  0, inf<long>>>;
 
+
   template<typename T>
   using negative =   invariant_host<T,     default_fail, bound_invariant<T, inf<T>, 0>>;
 
   using negative_s = invariant_host<short, default_fail, bound_invariant<short, inf<short>, 0>>;
   using negative_i = invariant_host<int,   default_fail, bound_invariant<int,   inf<int>, 0>>;
   using negative_l = invariant_host<long,  default_fail, bound_invariant<long,  inf<long>, 0>>;
+
 
   template<typename T, T LowerBound, T UpperBound>
   using bounded =   invariant_host<T,      default_fail, bound_invariant<T, LowerBound, UpperBound>>;
@@ -32,6 +34,32 @@ namespace inv {
 
   template<long LowerBound, long UpperBound>
   using bounded_l = invariant_host<long,   default_fail, bound_invariant<long, LowerBound, UpperBound>>;
+
+
+  template<typename T, T LowerBound>
+  using lower_bounded = invariant_host<T, default_fail, bound_invariant<T, LowerBound, inf<T>>>;
+
+  template<short LowerBound>
+  using lower_bounded_s = invariant_host<short, default_fail, bound_invariant<short, LowerBound, inf<short>>>;
+
+  template<int LowerBound>
+  using lower_bounded_i = invariant_host<int, default_fail, bound_invariant<int, LowerBound, inf<int>>>;
+
+  template<long LowerBound>
+  using lower_bounded_l = invariant_host<long, default_fail, bound_invariant<long, LowerBound, inf<long>>>;
+
+
+  template<typename T, T UpperBound>
+  using upper_bounded = invariant_host<T, default_fail, bound_invariant<T, inf<T>, UpperBound>>;
+
+  template<short UpperBound>
+  using upper_bounded_s = invariant_host<short, default_fail, bound_invariant<short, inf<short>, UpperBound>>;
+
+  template<int UpperBound>
+  using upper_bounded_i = invariant_host<int, default_fail, bound_invariant<int, inf<int>, UpperBound>>;
+
+  template<long UpperBound>
+  using upper_bounded_l = invariant_host<long, default_fail, bound_invariant<long, inf<long>, UpperBound>>;
 };
 
 #endif

@@ -7,8 +7,8 @@
 namespace inv {
 
 //FailPolicy must define:
-//1.: a static function assert() - that's we fail, it can call an assert, terminate, throw an exception, debugbreak etc.
-//2.: using enabled = std::true_type/false_type. If it's false, the invariants checks doesn't happen. (for example, in release builds the checks may not be desired)
+//1.: a static function trigger_assert() - if any invariant fail it's called: it can call an assert, terminate, throw an exception, debugbreak etc.
+//2.: using enabled = std::true_type/false_type. If it's false, the invariants won't be checked. (for example, in release builds the checks may not be desired)
 // 
 //Invariants is a Template parameter pack, which has to define a static function check (PrimitiveType).
 //An Invariant's responsibility is to check the invariant, while FailPolicy handle the errors.
@@ -34,6 +34,16 @@ public:
   invariant_host (const type& other) = default;
   type& operator= (const type& other) = default;
 
+  template<typename T, typename = std::enable_if_t<T::invariant_1::lower_bound >= invariant_1::lower_bound && T::invariant_1::upper_bound <= invariant_1::upper_bound, T>>
+  invariant_host (T other) : value (other.get ()) {}
+
+  template<typename T, typename = std::enable_if_t<T::invariant_1::lower_bound >= invariant_1::lower_bound && T::invariant_1::upper_bound <= invariant_1::upper_bound, T>>
+  type& operator= (T other)
+  {
+    value = other.get ();
+    return *this;
+  }
+
   type& operator= (PrimitiveType other) 
   {
     value = other;
@@ -41,30 +51,30 @@ public:
     return *this;
   } 
 
-   operator PrimitiveType () const {return value;}
+   operator PrimitiveType () const noexcept { return value; }
 
-   type& operator++() 
+   type& operator++ () 
    {
      ++value;
      check ();
      return *this;
    }
 
-   type& operator--()
+   type& operator-- ()
    {
      --value;
      check ();
      return *this;
    }
 
-   type operator++(int)
+   type operator++ (int)
    {
      type tmp (*this);
      operator++ ();
      return tmp;
    }
 
-   type operator--(int)
+   type operator-- (int)
    {
      type tmp (*this);
      operator-- ();
@@ -109,7 +119,7 @@ private:
   PrimitiveType value;
 
   void check () { check_impl (typename FailPolicy::enabled ()); }
-
+  
   void check_impl (std::true_type) const
   {
     if (!(Invariants::check (value) && ...))
@@ -118,8 +128,6 @@ private:
 
   void check_impl (std::false_type) const noexcept {}
 };
-
-
 }
 
 #endif
