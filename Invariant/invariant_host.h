@@ -31,16 +31,31 @@ public:
 
   invariant_host (PrimitiveType value) : value (value) {check ();}
 
+  template<PrimitiveType Value>
+  invariant_host (std::integral_constant<PrimitiveType, Value>) : value (Value) 
+  {
+    static_assert (Value >= invariant_1::lower_bound && Value <= invariant_1::upper_bound, "Integral_constant is out of range");
+  }
+
   invariant_host (const type& other) = default;
   type& operator= (const type& other) = default;
 
-  template<typename T, typename = std::enable_if_t<T::invariant_1::lower_bound >= invariant_1::lower_bound && T::invariant_1::upper_bound <= invariant_1::upper_bound, T>>
+  //temporary hack, checks likes this will move into invariant policy classes
+  template<typename T, typename = std::enable_if_t<T::invariant_1::lower_bound >= invariant_1::lower_bound && T::invariant_1::upper_bound <= invariant_1::upper_bound>>
   invariant_host (T other) : value (other.get ()) {}
 
-  template<typename T, typename = std::enable_if_t<T::invariant_1::lower_bound >= invariant_1::lower_bound && T::invariant_1::upper_bound <= invariant_1::upper_bound, T>>
+  template<typename T, typename = std::enable_if_t<T::invariant_1::lower_bound >= invariant_1::lower_bound && T::invariant_1::upper_bound <= invariant_1::upper_bound>>
   type& operator= (T other)
   {
     value = other.get ();
+    return *this;
+  }
+
+  template<PrimitiveType Value>
+  type& operator= (std::integral_constant<PrimitiveType, Value>)
+  {
+    static_assert (Value >= invariant_1::lower_bound && Value <= invariant_1::upper_bound, "Integral_constant is out of range");
+    value = Value;
     return *this;
   }
 
@@ -50,8 +65,6 @@ public:
     check ();
     return *this;
   } 
-
-   operator PrimitiveType () const noexcept { return value; }
 
    type& operator++ () 
    {
@@ -114,6 +127,7 @@ public:
    }
 
    PrimitiveType get () const noexcept { return value; }
+   operator PrimitiveType () const noexcept { return value; }
 
 private:
   PrimitiveType value;

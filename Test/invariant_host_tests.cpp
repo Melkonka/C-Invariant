@@ -159,6 +159,15 @@ namespace {
       check           (bounded_10_100 == 5);
     }
   }
+
+  void integral_constant_test ()
+  {
+    positive_i pos{std::integral_constant<int, 0>{}};
+    pos = std::integral_constant<int, 10>{};
+    check (pos == 10);
+
+    //TODO: static assert check. :(
+  }
 }
 
 namespace inv_test {
@@ -171,5 +180,6 @@ namespace inv_test {
     decrement_increment_test ();
     arithmetic_operator_test ();
     compound_assignment_operator_test ();
+    integral_constant_test ();
   }
 };                  
