@@ -29,7 +29,7 @@ public:
 
   static constexpr int invariant_size = sizeof...(Invariants);
 
-  invariant_host (PrimitiveType value) : value (value) {check ();}
+  invariant_host (PrimitiveType value) : value (value) { check (); }
 
   template<PrimitiveType Value>
   invariant_host (std::integral_constant<PrimitiveType, Value>) : value (Value) 
@@ -126,7 +126,7 @@ public:
      return *this;
    }
 
-   PrimitiveType get () const noexcept { return value; }
+   PrimitiveType get ()      const noexcept { return value; }
    operator PrimitiveType () const noexcept { return value; }
 
 private:
